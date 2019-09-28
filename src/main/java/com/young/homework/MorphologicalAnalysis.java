@@ -25,14 +25,26 @@ import org.slf4j.LoggerFactory;
 public class MorphologicalAnalysis {
 	// Logger
 	private static final Logger logger = LoggerFactory.getLogger(MorphologicalAnalysis.class.getSimpleName());
+	
+	public static void main(String args[]) {
+        // Analyzing
+        MorphologicalAnalysis morphologicalAnalysis = new MorphologicalAnalysis();
+        try {
+			morphologicalAnalysis.analyzing();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public void analyzing() throws IOException {
     	BufferedReader reader;
+    	BufferedWriter fileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./storage/noun_result.csv"), "utf-8"));
 		try {
 			reader = new BufferedReader(new FileReader(HtmlCrawlerCtrl.CRAWL_RESULT));
 			String tokenStr = "";
+			int cnt =0;
 			while ((tokenStr = reader.readLine()) != null) {
-	
+
 		        Komoran komoran = new Komoran(DEFAULT_MODEL.FULL);
 		        KomoranResult analyzeResultList = komoran.analyze(tokenStr);
 		        List<Token> tokenList = analyzeResultList.getTokenList();
@@ -42,20 +54,34 @@ public class MorphologicalAnalysis {
 		        	if (i != 0) {
 		        		previousToken = tokenList.get(i-1);
 		        	}
-		    
-		        	if ((token.getPos().equals("JKS")) || (token.getPos().equals("JKO"))) {
-		        		if (null == HtmlCrawlerCtrl.keyWordMap.get(previousToken.getMorph())) {
-		        			HtmlCrawlerCtrl.keyWordMap.put(previousToken.getMorph(), 1);
-		        		} else {
-		        			HtmlCrawlerCtrl.keyWordMap.put(previousToken.getMorph(), HtmlCrawlerCtrl.keyWordMap.get(previousToken.getMorph())+1);
+		        	
+		        	if ((token.getPos().equals("NNG")) || (token.getPos().equals("NNP")) || (token.getPos().equals("NNB")) || (token.getPos().equals("NNB"))) {
+		        		if (token.getMorph().length() > 1) {
+			        		System.out.format("%s\n", token.getMorph());
+
+			            	fileWriter.write(String.valueOf(token.getMorph()));
+			            	fileWriter.write("\n");
 		        		}
-		        		logger.info("## Keywork? "+previousToken.getMorph()+", "+HtmlCrawlerCtrl.keyWordMap.get(previousToken.getMorph()));
 		        	}
-		        }				
+		        	if ((token.getPos().equals("JKS")) || (token.getPos().equals("JKO"))) {
+		        		if (previousToken.getMorph().length() > 1) {
+			        		if (null == HtmlCrawlerCtrl.keyWordMap.get(previousToken.getMorph())) {
+			        			HtmlCrawlerCtrl.keyWordMap.put(previousToken.getMorph(), 1);
+			        		} else {
+			        			HtmlCrawlerCtrl.keyWordMap.put(previousToken.getMorph(), HtmlCrawlerCtrl.keyWordMap.get(previousToken.getMorph())+1);
+			        		}
+		        		}
+		        	}
+		        }
+		        cnt++;
+//        		logger.info(cnt +" ## Keyword? "+previousToken.getMorph()+", "+HtmlCrawlerCtrl.keyWordMap.get(previousToken.getMorph()));
 			}
 			reader.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+	        fileWriter.flush();
+	        fileWriter.close();
 		}
 		this.writeToFile();
     }
